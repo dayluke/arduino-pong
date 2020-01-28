@@ -35,7 +35,7 @@ public class Arduino : MonoBehaviour
 
         if (controllerActive)
         {
-            WriteToArduino("I");                // Ask for the positions
+            WriteToArduino("P");                // Ask for the positions
             String value = ReadFromArduino(50); // read the positions
 
             if (value != null)                  // check to see if we got what we need
@@ -56,10 +56,9 @@ public class Arduino : MonoBehaviour
         int i = 0;
         foreach (GameObject player in players)
         {
-            float zPos = Remap(int.Parse(values[i]), 0, 1023, -4, 6);         // scale the input. this could be done on the Arduino as well.
-            Debug.Log(Screen.height);
+            float yPos = Remap(int.Parse(values[i]), 0, 1023, 0, 11);         // scale the input. this could be done on the Arduino as well.
             Vector3 newPosition = new Vector3(player.transform.position.x,       // create a new Vector for the position
-                player.transform.position.y, zPos);
+                yPos, player.transform.position.z);
 
             player.transform.position = newPosition;        // apply the new position
             i++;
