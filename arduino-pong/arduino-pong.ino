@@ -38,7 +38,7 @@ void loop() {
       
       for (int i = 0; i < loopCount; i++)
       {
-        long duration;
+        long sum = 0;
         long cm;
         pinMode(pingPin, OUTPUT);
         
@@ -49,14 +49,20 @@ void loop() {
         digitalWrite(pingPin, LOW);
       
         pinMode(echoPin, INPUT);
-        allDurations[i] = pulseIn(echoPin, HIGH);        
+        allDurations[i] = pulseIn(echoPin, HIGH);
+        sum += pulseIn(echoPin, HIGH);        
       }
+      
+      long mean = sum / loopCount   
+      long sqrSum = 0;
 
       for (int i = 0; i < loopCount; i++)
       {
-        Serial.println(allDurations[i]); 
+        sqrSum += (allDurations[i] - mean) * (allDurations[i] - mean);
       }
-           
+
+      variance = sqrSum / loopCount;
+      
     }   
   }
 }
