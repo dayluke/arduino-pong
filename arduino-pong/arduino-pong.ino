@@ -7,12 +7,15 @@ const int pingPin = 7;
 // Ultrasonic echoPin.
 const int echoPin = 6;
 
+long time;
+
 void setup() {
   Serial.begin(9600);
   pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
+  time = micros();
   // Code for passing potentiometer results to Unity.
   if (Serial.available() > 0) {
     incomingByte = Serial.read();
@@ -33,8 +36,9 @@ void loop() {
     // Code for passing ultrasonic sensor to Unity.
     if (incomingByte == 'D')
     {
-      int loopCount = 20;
+      int loopCount = 10;
       long allDurations[loopCount];
+      long sum = 0;
       
       for (int i = 0; i < loopCount; i++)
       {
@@ -52,17 +56,34 @@ void loop() {
         allDurations[i] = pulseIn(echoPin, HIGH);
         sum += pulseIn(echoPin, HIGH);        
       }
-      
-      long mean = sum / loopCount   
+
+      // Calculate standard deviation.
+      long mean = sum / loopCount;
       long sqrSum = 0;
 
       for (int i = 0; i < loopCount; i++)
       {
-        sqrSum += (allDurations[i] - mean) * (allDurations[i] - mean);
+        sqrSum += sq(allDurations[i] - mean);
       }
 
-      variance = sqrSum / loopCount;
+      long variance = sqrSum / loopCount;
+      long stdDev = sqrt(variance);
+
+      long allowableSum = 0;
+      int allowedResultCount = 0;
+      for (int i = 0; i < loopCount; i++)
+      {
+        if (abs(allDurations[i] - mean) < stdDev)
+        {
+          allowableSum += allDurations[i];
+          allowedResultCount++;
+        }
+      }
+
+      long allowableMean = allowableSum / allowedResultCount;
       
+      Serial.println(allowableMean);
+      Serial.println((micros() - time) / 1000000);
     }   
   }
 }
