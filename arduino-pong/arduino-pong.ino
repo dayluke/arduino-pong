@@ -24,26 +24,39 @@ void loop() {
       digitalWrite(ledPin, LOW);
     }
 
-    if (incomingByte == 'I') {
+    if (incomingByte == 'P') {
       Serial.print(analogRead(A4));
       Serial.print("-");
       Serial.println(analogRead(A5));
     } 
+
+    // Code for passing ultrasonic sensor to Unity.
+    if (incomingByte == 'D')
+    {
+      int loopCount = 20;
+      long allDurations[loopCount];
+      
+      for (int i = 0; i < loopCount; i++)
+      {
+        long duration;
+        long cm;
+        pinMode(pingPin, OUTPUT);
+        
+        digitalWrite(pingPin, LOW);
+        delayMicroseconds(2);
+        digitalWrite(pingPin, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(pingPin, LOW);
+      
+        pinMode(echoPin, INPUT);
+        allDurations[i] = pulseIn(echoPin, HIGH);        
+      }
+
+      for (int i = 0; i < loopCount; i++)
+      {
+        Serial.println(allDurations[i]); 
+      }
+           
+    }   
   }
-
-  // Code for passing ultrasonic sensor to Unity.
-  long duration;
-  long cm;
-  pinMode(pingPin, OUTPUT);
-  
-  digitalWrite(pingPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(pingPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(pingPin, LOW);
-
-  pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH);
-
-  Serial.println(duration);
 }
