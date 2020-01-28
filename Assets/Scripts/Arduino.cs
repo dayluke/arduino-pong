@@ -9,17 +9,14 @@ public class Arduino : MonoBehaviour
     public GameObject[] players;
     public bool controllerActive = false;
     public int commPort = 0;
-
     private SerialPort serial = null;
-    private bool connected = false;
 
-    // Use this for initialization
-    void Start()
+    private void Start()
     {
         ConnectToSerial();
     }
 
-    void ConnectToSerial()
+    private void ConnectToSerial()
     {
         Debug.Log("Attempting Serial: " + commPort);
 
@@ -29,50 +26,74 @@ public class Arduino : MonoBehaviour
         serial.Open();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-
         if (controllerActive)
         {
-            WriteToArduino("P");                // Ask for the positions
-            String value = ReadFromArduino(50); // read the positions
+            WriteToArduino("D"); // Distance
+            string distanceValue = ReadFromArduino();
+            string[] distances = null;
 
-            if (value != null)                  // check to see if we got what we need
+            WriteToArduino("P"); // Potentiometer
+            string potentiValue = ReadFromArduino();
+            string[] potinetiValues = null;
+
+            WriteToArduino("V"); // Vibration
+            string otherValue = ReadFromArduino();
+            string[] others = null;
+
+            if (distanceValue != null)
             {
-                // EXPECTED VALUE FORMAT: "0-1023"
-                string[] values = value.Split('-');     // split the values
+                distances = distanceValue.Split('-');
+            }
 
-                if (values.Length == 2)
-                {
-                    positionPlayers(values);
-                }
+            if (potentiValue != null)
+            {
+                potinetiValues = potentiValue.Split('-');
+            }
+
+            if(otherValue != null)
+            {
+                others = otherValue.Split('-');
+            }
+
+            if (distances.Length == 2 && potinetiValues.Length == 2 && others.Length == 2)
+            {
+                positionPlayers(distances, potinetiValues, others);
             }
         }
     }
 
-    void positionPlayers(String[] values)
+    private void positionPlayers(string[] xValues, string[] yValues, string[] zValues)
     {
         int i = 0;
         foreach (GameObject player in players)
         {
-            float yPos = Remap(int.Parse(values[i]), 0, 1023, 0, 11);         // scale the input. this could be done on the Arduino as well.
-            Vector3 newPosition = new Vector3(player.transform.position.x,       // create a new Vector for the position
-                yPos, player.transform.position.z);
+            float xPos = 0f;
+            if (player.name == "P1")
+            {
+                xPos = Remap(int.Parse(xValues[i]), 0, 1023, -4, 0.5f);
+            } else
+            {
+                xPos = Remap(int.Parse(xValues[i]), 0, 1023, 0.5f, 4);
+            }
 
-            player.transform.position = newPosition;        // apply the new position
+            float yPos = Remap(int.Parse(yValues[i]), 0, 1023, 0, 11);
+            float zPos = Remap(int.Parse(zValues[i]), 0, 1023, -4, 4);
+            Vector3 newPosition = new Vector3(xPos, yPos, zPos);
+            player.transform.position = newPosition;
             i++;
         }
 
     }
 
-    void WriteToArduino(string message)
+    private void WriteToArduino(string message)
     {
         serial.WriteLine(message);
         serial.BaseStream.Flush();
     }
 
-    public string ReadFromArduino(int timeout = 0)
+    public string ReadFromArduino(int timeout = 50)
     {
         serial.ReadTimeout = timeout;
         try
@@ -81,19 +102,20 @@ public class Arduino : MonoBehaviour
         }
         catch (TimeoutException e)
         {
+            Debug.LogError(e);
             return null;
         }
     }
 
     // be sure to close the serial when the game ends.
-    void OnDestroy()
+    private void OnDestroy()
     {
         Debug.Log("Exiting");
         serial.Close();
     }
 
     // https://forum.unity.com/threads/re-map-a-number-from-one-range-to-another.119437/
-    float Remap(float value, float from1, float to1, float from2, float to2)
+    private float Remap(float value, float from1, float to1, float from2, float to2)
     {
         return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
     }
