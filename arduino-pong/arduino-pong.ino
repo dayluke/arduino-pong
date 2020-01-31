@@ -3,9 +3,9 @@ const int ledPin = 13;
 int incomingByte;
 
 // Ultrasonic pingPin.
-const int pingPin = 7;
+const int pingPin[2] = {8, 7};
 // Ultrasonic echoPin.
-const int echoPin = 6;
+const int echoPin[2] = {9,6};
 
 long time;
 
@@ -28,62 +28,39 @@ void loop() {
     }
 
     if (incomingByte == 'P') {
-      Serial.print(analogRead(A4));
+      Serial.print(analogRead(A5));
       Serial.print("-");
-      Serial.println(analogRead(A5));
+      Serial.println(analogRead(A4));
     } 
 
     // Code for passing ultrasonic sensor to Unity.
     if (incomingByte == 'D')
     {
-      int loopCount = 10;
-      long allDurations[loopCount];
-      long sum = 0;
-      
-      for (int i = 0; i < loopCount; i++)
+      long ping[2];
+
+      for (int i = 0; i < 2; i++)
       {
-        long sum = 0;
-        long cm;
-        pinMode(pingPin, OUTPUT);
+        pinMode(pingPin[i], OUTPUT);
         
-        digitalWrite(pingPin, LOW);
+        digitalWrite(pingPin[i], LOW);
         delayMicroseconds(2);
-        digitalWrite(pingPin, HIGH);
+        digitalWrite(pingPin[i], HIGH);
         delayMicroseconds(10);
-        digitalWrite(pingPin, LOW);
+        digitalWrite(pingPin[i], LOW);
       
-        pinMode(echoPin, INPUT);
-        allDurations[i] = pulseIn(echoPin, HIGH);
-        sum += pulseIn(echoPin, HIGH);        
+        pinMode(echoPin[i], INPUT);
+        ping[i] = pulseIn(echoPin[i], HIGH);
       }
-
-      // Calculate standard deviation.
-      long mean = sum / loopCount;
-      long sqrSum = 0;
-
-      for (int i = 0; i < loopCount; i++)
-      {
-        sqrSum += sq(allDurations[i] - mean);
-      }
-
-      long variance = sqrSum / loopCount;
-      long stdDev = sqrt(variance);
-
-      long allowableSum = 0;
-      int allowedResultCount = 0;
-      for (int i = 0; i < loopCount; i++)
-      {
-        if (abs(allDurations[i] - mean) < stdDev)
-        {
-          allowableSum += allDurations[i];
-          allowedResultCount++;
-        }
-      }
-
-      long allowableMean = allowableSum / allowedResultCount;
       
-      Serial.println(allowableMean);
-      Serial.println((micros() - time) / 1000000);
+      Serial.print(ping[0]);
+      Serial.print("-");
+      Serial.println(ping[1]);
+      
     }   
+  }
+
+  while (Serial.available())
+  {
+    Serial.read();
   }
 }

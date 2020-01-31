@@ -10,6 +10,7 @@ public class Arduino : MonoBehaviour
     public bool controllerActive = false;
     public int commPort = 0;
     private SerialPort serial = null;
+    public float lerpSpeed = 10f;
 
     private void Start()
     {
@@ -30,17 +31,13 @@ public class Arduino : MonoBehaviour
     {
         if (controllerActive)
         {
-            WriteToArduino("D"); // Distance
+            WriteToArduino("D"); // distance
             string distanceValue = ReadFromArduino();
             string[] distances = null;
 
             WriteToArduino("P"); // Potentiometer
             string potentiValue = ReadFromArduino();
             string[] potinetiValues = null;
-
-            WriteToArduino("V"); // Vibration
-            string otherValue = ReadFromArduino();
-            string[] others = null;
 
             if (distanceValue != null)
             {
@@ -52,36 +49,39 @@ public class Arduino : MonoBehaviour
                 potinetiValues = potentiValue.Split('-');
             }
 
-            if(otherValue != null)
-            {
-                others = otherValue.Split('-');
-            }
+            positionPlayers(distances, potinetiValues);
 
-            if (distances.Length == 2 && potinetiValues.Length == 2 && others.Length == 2)
-            {
-                positionPlayers(distances, potinetiValues, others);
-            }
+            distanceValue = null;
+            potentiValue = null;
         }
     }
 
-    private void positionPlayers(string[] xValues, string[] yValues, string[] zValues)
+    private void positionPlayers(string[] zValues, string[] yValues)
     {
         int i = 0;
         foreach (GameObject player in players)
         {
-            float xPos = 0f;
-            if (player.name == "P1")
+            float yPos = player.transform.position.y;
+            float zPos = player.transform.position.z;
+            if (zValues[i] != "-1" || zValues[i] != null || int.Parse(zValues[i]) > 1000 || int.Parse(zValues[i]) < 500)
             {
-                xPos = Remap(int.Parse(xValues[i]), 0, 1023, -4, 0.5f);
-            } else
-            {
-                xPos = Remap(int.Parse(xValues[i]), 0, 1023, 0.5f, 4);
+                if (player.name == "P1")
+                {
+                    zPos = Remap(int.Parse(zValues[i]), 500, 1000, -4, 0.5f);
+                }
+                else
+                {
+                    zPos = Remap(int.Parse(zValues[i]), 500, 1000, 0.5f, 4);
+                }
             }
 
-            float yPos = Remap(int.Parse(yValues[i]), 0, 1023, 0, 11);
-            float zPos = Remap(int.Parse(zValues[i]), 0, 1023, -4, 4);
-            Vector3 newPosition = new Vector3(xPos, yPos, zPos);
-            player.transform.position = newPosition;
+            if (yValues[i] != "-1" || yValues[i] != null || int.Parse(yValues[i]) > 1023)
+            {
+                yPos = Remap(int.Parse(yValues[i]), 0, 1023, 1f, 9.5f);
+            }
+
+            Vector3 newPosition = new Vector3(player.transform.position.x, yPos, zPos);
+            player.transform.position = Vector3.Lerp(player.transform.position, newPosition, lerpSpeed * Time.deltaTime);
             i++;
         }
 
@@ -93,7 +93,7 @@ public class Arduino : MonoBehaviour
         serial.BaseStream.Flush();
     }
 
-    public string ReadFromArduino(int timeout = 50)
+    public string ReadFromArduino(int timeout = 10)
     {
         serial.ReadTimeout = timeout;
         try
